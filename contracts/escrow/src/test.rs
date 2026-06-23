@@ -1,10 +1,11 @@
 #![cfg(test)]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, testutils::Address as _, Address, BytesN, Env,
+    contract, contractimpl, contracttype, testutils::Address as _, Address, BytesN, Env, Vec,
 };
 
 use crate::{EscrowContract, EscrowContractClient};
+use crate::{EscrowEvent, EscrowAction};
 
 #[contract]
 pub struct MockToken;
@@ -183,4 +184,51 @@ fn test_get_locked_returns_amount_when_locked() {
 
     client.lock(&invoice_id, &amount);
     assert_eq!(client.get_locked(&invoice_id), amount);
+}
+
+#[test]
+fn test_history_records_on_lock_and_release_to_issuer() {
+    let (env, client, _admin, _pool, _usdc) = setup();
+    let invoice_id = generate_invoice_id(&env);
+    let amount: u128 = 1_000_000_000;
+
+    client.lock(&invoice_id, &amount);
+    let history: Vec<EscrowEvent> = client.get_history(&invoice_id);
+    assert_eq!(history.len(), 1);
+    let first = history.get(0).unwrap();
+    assert_eq!(first.action, EscrowAction::Locked);
+    assert_eq!(first.amount, amount);
+
+    let issuer = Address::generate(&env);
+    client.release_to_issuer(&invoice_id, &issuer);
+    let history2: Vec<EscrowEvent> = client.get_history(&invoice_id);
+    assert_eq!(history2.len(), 2);
+    let second = history2.get(1).unwrap();
+    assert_eq!(second.action, EscrowAction::ReleasedToIssuer);
+    assert_eq!(second.amount, amount);
+}
+
+#[test]
+fn test_history_records_on_release_to_pool_and_default() {
+    let (env, client, _admin, _pool, _usdc) = setup();
+    let invoice_id = generate_invoice_id(&env);
+    let amount: u128 = 2_000_000_000;
+
+    client.lock(&invoice_id, &amount);
+    client.release_to_pool(&invoice_id, &1_050_000_000);
+    let history: Vec<EscrowEvent> = client.get_history(&invoice_id);
+    assert_eq!(history.len(), 2);
+    let second = history.get(1).unwrap();
+    assert_eq!(second.action, EscrowAction::ReleasedToPool);
+    assert_eq!(second.amount, 1_050_000_000);
+
+    // lock again and trigger default using a distinct invoice id
+    let invoice_id2 = BytesN::from_array(&env, &[1u8; 32]);
+    client.lock(&invoice_id2, &amount);
+    let res = client.handle_default(&invoice_id2);
+    assert!(res);
+    let history_d: Vec<EscrowEvent> = client.get_history(&invoice_id2);
+    assert_eq!(history_d.len(), 2); // Locked + DefaultHandled
+    let last = history_d.get(1).unwrap();
+    assert_eq!(last.action, EscrowAction::DefaultHandled);
 }

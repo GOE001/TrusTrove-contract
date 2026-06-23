@@ -1,6 +1,6 @@
 {
   "generators": {
-    "address": 4,
+    "address": 5,
     "nonce": 0
   },
   "auth": [
@@ -58,6 +58,7 @@
         }
       ]
     ],
+    [],
     [
       [
         "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
@@ -65,10 +66,13 @@
           "function": {
             "contract_fn": {
               "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-              "function_name": "handle_default",
+              "function_name": "release_to_issuer",
               "args": [
                 {
                   "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 }
               ]
             }
@@ -220,7 +224,7 @@
                 "val": {
                   "i128": {
                     "hi": 0,
-                    "lo": 10000000000000
+                    "lo": 9999000000000
                   }
                 }
               }
@@ -263,6 +267,48 @@
                   "i128": {
                     "hi": 0,
                     "lo": 0
+                  }
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          4095
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
+            "key": {
+              "vec": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
+                "key": {
+                  "vec": [
+                    {
+                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1000000000
                   }
                 }
               }
@@ -393,7 +439,7 @@
                           "val": {
                             "vec": [
                               {
-                                "symbol": "DefaultHandled"
+                                "symbol": "ReleasedToIssuer"
                               }
                             ]
                           }
@@ -735,11 +781,111 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000004"
               },
               {
-                "symbol": "handle_default"
+                "symbol": "get_history"
               }
             ],
             "data": {
               "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000004",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "get_history"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "action"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "Locked"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "amount"
+                      },
+                      "val": {
+                        "u128": {
+                          "hi": 0,
+                          "lo": 1000000000
+                        }
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "invoice_id"
+                      },
+                      "val": {
+                        "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "timestamp"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000004"
+              },
+              {
+                "symbol": "release_to_issuer"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+                }
+              ]
             }
           }
         }
@@ -770,7 +916,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 },
                 {
                   "i128": {
@@ -818,7 +964,7 @@
                 "symbol": "fn_return"
               },
               {
-                "symbol": "handle_default"
+                "symbol": "release_to_issuer"
               }
             ],
             "data": {
@@ -844,7 +990,7 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000004"
               },
               {
-                "symbol": "get_locked"
+                "symbol": "get_history"
               }
             ],
             "data": {
@@ -867,14 +1013,98 @@
                 "symbol": "fn_return"
               },
               {
-                "symbol": "get_locked"
+                "symbol": "get_history"
               }
             ],
             "data": {
-              "u128": {
-                "hi": 0,
-                "lo": 0
-              }
+              "vec": [
+                {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "action"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "Locked"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "amount"
+                      },
+                      "val": {
+                        "u128": {
+                          "hi": 0,
+                          "lo": 1000000000
+                        }
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "invoice_id"
+                      },
+                      "val": {
+                        "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "timestamp"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    }
+                  ]
+                },
+                {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "action"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "ReleasedToIssuer"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "amount"
+                      },
+                      "val": {
+                        "u128": {
+                          "hi": 0,
+                          "lo": 1000000000
+                        }
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "invoice_id"
+                      },
+                      "val": {
+                        "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "timestamp"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    }
+                  ]
+                }
+              ]
             }
           }
         }

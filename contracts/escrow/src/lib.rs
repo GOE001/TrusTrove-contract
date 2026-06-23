@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contract, contractimpl, panic_with_error, token, Address, BytesN, Env};
+use soroban_sdk::{contract, contractimpl, panic_with_error, token, Address, BytesN, Env, Vec};
 
 mod errors;
 mod test;
@@ -66,6 +66,15 @@ impl EscrowContract {
         env.storage().persistent().set(&key, &record);
         env.storage().persistent().extend_ttl(&key, 100, 2_000_000);
 
+        // Append history event
+        let event = EscrowEvent {
+            invoice_id: invoice_id.clone(),
+            action: EscrowAction::Locked,
+            amount,
+            timestamp: env.ledger().timestamp(),
+        };
+        append_history(&env, &invoice_id, event);
+
         true
     }
 
@@ -91,6 +100,14 @@ impl EscrowContract {
             &issuer,
             &(record.amount as i128),
         );
+        // append history event for release to issuer
+        let event = EscrowEvent {
+            invoice_id: invoice_id.clone(),
+            action: EscrowAction::ReleasedToIssuer,
+            amount: record.amount,
+            timestamp: env.ledger().timestamp(),
+        };
+        append_history(&env, &invoice_id, event);
 
         env.storage().persistent().remove(&key);
         true
@@ -118,6 +135,14 @@ impl EscrowContract {
             &pool,
             &(repayment_amount as i128),
         );
+        // append history event for release to pool
+        let event = EscrowEvent {
+            invoice_id: invoice_id.clone(),
+            action: EscrowAction::ReleasedToPool,
+            amount: repayment_amount,
+            timestamp: env.ledger().timestamp(),
+        };
+        append_history(&env, &invoice_id, event);
 
         env.storage().persistent().remove(&key);
         true
@@ -149,6 +174,14 @@ impl EscrowContract {
             &pool,
             &(record.amount as i128),
         );
+        // append history event for default handled
+        let event = EscrowEvent {
+            invoice_id: invoice_id.clone(),
+            action: EscrowAction::DefaultHandled,
+            amount: record.amount,
+            timestamp: env.ledger().timestamp(),
+        };
+        append_history(&env, &invoice_id, event);
 
         env.storage().persistent().remove(&key);
         true
@@ -161,4 +194,19 @@ impl EscrowContract {
             .map(|r| r.amount)
             .unwrap_or(0)
     }
+
+    pub fn get_history(env: Env, invoice_id: BytesN<32>) -> Vec<EscrowEvent> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::History(invoice_id))
+            .unwrap_or(Vec::new(&env))
+    }
+}
+
+fn append_history(env: &Env, invoice_id: &BytesN<32>, event: EscrowEvent) {
+    let key = DataKey::History(invoice_id.clone());
+    let mut history: Vec<EscrowEvent> = env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
+    history.push_back(event);
+    env.storage().persistent().set(&key, &history);
+    env.storage().persistent().extend_ttl(&key, 100, 2_000_000);
 }
