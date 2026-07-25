@@ -161,6 +161,69 @@ fn test_list_fails_discount_too_high() {
 }
 
 #[test]
+fn test_list_for_financing_discount_bps_zero_boundary() {
+    // discount_bps == 0 is currently accepted; see issue #79 for a
+    // companion validation that would turn this into a panic test.
+    let (env, client, issuer, buyer, _, usdc) = setup();
+    let due_date = env.ledger().timestamp() + 86400;
+    let invoice_id = client.create(&issuer, &buyer, &1_000_000_000, &due_date, &usdc);
+
+    let result = client.list_for_financing(&invoice_id, &0);
+    assert!(result);
+
+    let invoice = client.get(&invoice_id);
+    assert_eq!(invoice.status, InvoiceStatus::Listed);
+    assert_eq!(invoice.discount_bps, 0);
+
+    let contract_id = client.address.clone();
+    let events = env.events().all();
+    let (event_contract, topics, data) = events.last().expect("expected at least one event");
+    assert_eq!(event_contract, contract_id);
+    assert_eq!(
+        topics,
+        (Symbol::new(&env, "invoice_listed"), invoice_id.clone()).into_val(&env)
+    );
+    assert_eq!(u32::try_from_val(&env, &data).unwrap(), 0u32);
+}
+
+#[test]
+fn test_list_for_financing_discount_bps_max_boundary() {
+    // discount_bps == 5000 is the inclusive upper bound and must succeed.
+    let (env, client, issuer, buyer, _, usdc) = setup();
+    let due_date = env.ledger().timestamp() + 86400;
+    let invoice_id = client.create(&issuer, &buyer, &1_000_000_000, &due_date, &usdc);
+
+    let result = client.list_for_financing(&invoice_id, &5000);
+    assert!(result);
+
+    let invoice = client.get(&invoice_id);
+    assert_eq!(invoice.status, InvoiceStatus::Listed);
+    assert_eq!(invoice.discount_bps, 5000);
+
+    let contract_id = client.address.clone();
+    let events = env.events().all();
+    let (event_contract, topics, data) = events.last().expect("expected at least one event");
+    assert_eq!(event_contract, contract_id);
+    assert_eq!(
+        topics,
+        (Symbol::new(&env, "invoice_listed"), invoice_id.clone()).into_val(&env)
+    );
+    assert_eq!(u32::try_from_val(&env, &data).unwrap(), 5000u32);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #9)")]
+fn test_list_for_financing_discount_bps_one_above_max_boundary_panics() {
+    // discount_bps == 5001 is one past the inclusive upper bound and must panic
+    // with DiscountTooHigh (#9). Pins the exact boundary alongside the existing
+    // test_list_fails_discount_too_high regression test.
+    let (env, client, issuer, buyer, _, usdc) = setup();
+    let due_date = env.ledger().timestamp() + 86400;
+    let invoice_id = client.create(&issuer, &buyer, &1_000_000_000, &due_date, &usdc);
+    client.list_for_financing(&invoice_id, &5001);
+}
+
+#[test]
 fn test_full_lifecycle() {
     let (env, client, issuer, buyer, _, usdc) = setup();
     let due_date = env.ledger().timestamp() + 86400;
