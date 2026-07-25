@@ -1,9 +1,15 @@
 #![cfg(test)]
 
 use soroban_sdk::{
+<<<<<<< HEAD
     contract, contractimpl, contracttype,
     testutils::{Address as _, Events as _, Ledger},
     vec, Address, BytesN, Env, IntoVal, Symbol,
+=======
+    contract, contractimpl, contracttype, testutils::Address as _, testutils::Events as _,
+    testutils::Ledger, testutils::MockAuth, testutils::MockAuthInvoke, Address, BytesN, Env,
+    IntoVal, Symbol, TryFromVal,
+>>>>>>> 87db55d (feat(invoice): emit pool_contract_updated event on set_pool_contract)
 };
 
 use crate::{InvoiceContract, InvoiceContractClient, InvoiceStatus};
@@ -850,6 +856,7 @@ fn test_get_funding_asset_returns_correct_asset() {
 }
 
 #[test]
+<<<<<<< HEAD
 fn test_expire_listing_succeeds_by_issuer() {
     let (env, client, issuer, buyer, _, usdc) = setup();
     let due_date = env.ledger().timestamp() + 86400;
@@ -1028,10 +1035,46 @@ fn test_expire_listing_stranger_panics() {
     let registry_id = env.register_contract(None, MockRegistry);
     let registry_client = MockRegistryClient::new(&env, &registry_id);
 
+=======
+fn test_set_pool_contract_emits_event() {
+    let (env, client, _issuer, _buyer, _registry, usdc) = setup();
+    let pool = mock_pool_with_asset(&env, &usdc);
+    client.set_pool_contract(&pool);
+
+    let events = env.events().all();
+    assert_eq!(events.len(), 1);
+    let event = events.get(0).unwrap();
+    assert_eq!(event.1.len(), 3);
+    let symbol: Symbol = Symbol::try_from_val(&env, &event.1.get(0).unwrap()).unwrap();
+    assert_eq!(symbol, Symbol::new(&env, "pool_contract_updated"));
+    let old: Address = Address::try_from_val(&env, &event.1.get(1).unwrap()).unwrap();
+    assert_eq!(old, pool);
+    let new: Address = Address::try_from_val(&env, &event.1.get(2).unwrap()).unwrap();
+    assert_eq!(new, pool);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #2)")]
+fn test_set_pool_contract_fails_without_admin() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, InvoiceContract);
+    let client = InvoiceContractClient::new(&env, &contract_id);
+    let pool = mock_pool_with_asset(&env, &Address::generate(&env));
+    client.set_pool_contract(&pool);
+}
+
+#[test]
+#[should_panic(expected = "Error(Auth, InvalidAction)")]
+fn test_set_pool_contract_fails_non_admin() {
+    let env = Env::default();
+    let registry_id = env.register_contract(None, MockRegistry);
+    let registry_client = MockRegistryClient::new(&env, &registry_id);
+>>>>>>> 87db55d (feat(invoice): emit pool_contract_updated event on set_pool_contract)
     let issuer = Address::generate(&env);
     let buyer = Address::generate(&env);
     registry_client.register(&issuer);
     registry_client.register(&buyer);
+<<<<<<< HEAD
 
     let contract_id = env.register_contract(None, InvoiceContract);
     let client = InvoiceContractClient::new(&env, &contract_id);
@@ -1044,10 +1087,22 @@ fn test_expire_listing_stranger_panics() {
             contract: &contract_id,
             fn_name: "initialize",
             args: (admin.clone(), registry_id.clone()).into_val(&env),
+=======
+    let contract_id = env.register_contract(None, InvoiceContract);
+    let client = InvoiceContractClient::new(&env, &contract_id);
+    let admin = Address::generate(&env);
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &contract_id,
+            fn_name: "initialize",
+            args: (&admin, &registry_id).into_val(&env),
+>>>>>>> 87db55d (feat(invoice): emit pool_contract_updated event on set_pool_contract)
             sub_invokes: &[],
         },
     }]);
     client.initialize(&admin, &registry_id);
+<<<<<<< HEAD
 
     let usdc = Address::generate(&env);
     let due_date = env.ledger().timestamp() + 86400;
@@ -1279,4 +1334,27 @@ fn test_existing_valid_addresses_still_work() {
     assert_eq!(invoice.face_value, face_value);
     assert_eq!(invoice.due_date, due_date);
     assert_eq!(invoice.status, InvoiceStatus::Created);
+=======
+    let pool = mock_pool_with_asset(&env, &Address::generate(&env));
+    client.set_pool_contract(&pool);
+}
+
+#[test]
+fn test_set_pool_contract_emits_event_on_update() {
+    let (env, client, _issuer, _buyer, _registry, usdc) = setup();
+    let first_pool = mock_pool_with_asset(&env, &usdc);
+    client.set_pool_contract(&first_pool);
+
+    let second_pool = mock_pool_with_asset(&env, &usdc);
+    client.set_pool_contract(&second_pool);
+
+    let events = env.events().all();
+    assert_eq!(events.len(), 2);
+    let event = events.get(1).unwrap();
+    assert_eq!(event.1.len(), 3);
+    let old: Address = Address::try_from_val(&env, &event.1.get(1).unwrap()).unwrap();
+    assert_eq!(old, first_pool);
+    let new: Address = Address::try_from_val(&env, &event.1.get(2).unwrap()).unwrap();
+    assert_eq!(new, second_pool);
+>>>>>>> 87db55d (feat(invoice): emit pool_contract_updated event on set_pool_contract)
 }
