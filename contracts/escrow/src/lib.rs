@@ -260,7 +260,7 @@ impl EscrowContract {
     ///
     /// # Panics
     /// * `NotInitialized` if the contract has not been initialized and a lock record exists for the invoice.
-    /// * Panics with `"Not authorized"` if `caller` is neither the admin nor the pool contract.
+    /// * `NotAuthorized` if `caller` is neither the admin nor the pool contract.
     ///
     /// # Returns
     /// * `bool` - `true` if default handling completed, `false` if no lock exists.
@@ -271,9 +271,9 @@ impl EscrowContract {
     /// ```
     pub fn handle_default(env: Env, invoice_id: BytesN<32>, caller: Address) -> bool {
         let key = DataKey::Locked(invoice_id.clone());
-        if !env.storage().persistent().has(&key) {
+        let Some(record) = env.storage().persistent().get::<_, EscrowRecord>(&key) else {
             return false;
-        }
+        };
         let admin: Address = env
             .storage()
             .instance()
@@ -287,10 +287,9 @@ impl EscrowContract {
 
         caller.require_auth();
         if caller != admin && caller != pool {
-            panic!("Not authorized");
+            panic_with_error!(&env, EscrowError::NotAuthorized);
         }
 
-        let record: EscrowRecord = env.storage().persistent().get(&key).unwrap();
         let usdc_id: Address = env
             .storage()
             .instance()

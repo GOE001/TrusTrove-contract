@@ -444,7 +444,7 @@ fn test_handle_default_returns_false_if_no_record() {
 // ============================================================================
 
 #[test]
-#[should_panic]
+#[should_panic(expected = "Error(Contract, #3)")]
 fn test_handle_default_unauthorized_caller_panics() {
     let (env, client, _admin, pool, _usdc_id, _contract_id) = setup();
     let invoice_id = generate_invoice_id(&env, 1);
