@@ -116,6 +116,73 @@ fn test_revoke_unregistered_panics() {
 }
 
 #[test]
+#[should_panic(expected = "Error(Auth, InvalidAction)")]
+fn test_revoke_wrong_auth_panics() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, RegistryContract);
+    let client = RegistryContractClient::new(&env, &contract_id);
+
+    let admin = Address::generate(&env);
+    let issuer = Address::generate(&env);
+    let metadata = map![&env];
+    let profile = Profile::new(
+        issuer.clone(),
+        Role::Issuer,
+        true,
+        env.ledger().timestamp(),
+        metadata,
+    );
+
+    env.as_contract(&contract_id, || {
+        env.storage().instance().set(&DataKey::Admin, &admin);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Profile(issuer.clone()), &profile);
+        env.storage()
+            .persistent()
+            .extend_ttl(&DataKey::Profile(issuer.clone()), 100, 2_000_000);
+    });
+
+    assert!(client.is_verified(&issuer));
+    client.revoke(&issuer);
+    assert!(client.is_verified(&issuer));
+    assert!(env.events().all().is_empty());
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #2)")]
+fn test_re_register_revoked_issuer_panics() {
+    let (env, client) = setup();
+    let admin = Address::generate(&env);
+    client.initialize(&admin);
+    let issuer = Address::generate(&env);
+    client.register_issuer(&issuer, &map![&env]);
+    assert!(client.is_verified(&issuer));
+    client.revoke(&issuer);
+    assert!(!client.is_verified(&issuer));
+    // A revoked address still has a profile in storage, so re-registering
+    // must panic with AlreadyRegistered (#2).
+    client.register_issuer(&issuer, &map![&env]);
+}
+
+#[test]
+fn test_reinstate_revoked_issuer_restores_verification() {
+    let (env, client) = setup();
+    let admin = Address::generate(&env);
+    client.initialize(&admin);
+    let issuer = Address::generate(&env);
+    client.register_issuer(&issuer, &map![&env]);
+    assert!(client.is_verified(&issuer));
+
+    client.revoke(&issuer);
+    assert!(!client.is_verified(&issuer));
+
+    // Reinstate the revoked issuer via admin.verify_profile.
+    client.verify_profile(&issuer, &true);
+    assert!(client.is_verified(&issuer));
+}
+
+#[test]
 fn test_update_metadata_self_succeeds() {
     let (env, client) = setup();
     let admin = Address::generate(&env);
