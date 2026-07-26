@@ -116,7 +116,11 @@ impl InvoiceContract {
     /// * `InvoiceError::BuyerNotVerified` if the buyer is not verified in the registry.
     /// * `InvoiceError::InvalidFaceValue` if `face_value` is zero.
     /// * `InvoiceError::InvalidAmount` if `face_value` exceeds [`MAX_FACE_VALUE`].
-    /// * `InvoiceError::InvalidDueDate` if `due_date` is not in the future.
+    /// * `InvoiceError::InvalidDueDate` if `due_date` is not strictly in the
+    ///   future. Requires `due_date > now`; the boundary comparator is `<=`,
+    ///   so `due_date == now` is rejected. Pinning tests:
+    ///   `test_create_fails_when_due_date_equals_now` and
+    ///   `test_create_succeeds_when_due_date_one_second_in_future`.
     /// * `InvoiceError::CounterOverflow` if the internal invoice counter overflows.
     ///
     /// # Returns
@@ -770,7 +774,12 @@ impl InvoiceContract {
             .unwrap_or(7 * 24 * 60 * 60)
     }
 
-    pub fn check_auth(_env: Env, address: Address) {
+    /// Helper to check authorization for a given address.
+    /// This is invoked dynamically via `try_invoke_contract` in `expire_listing`.
+    /// Rust's dead-code analysis can't see the dynamic dispatch via `Symbol`, so
+    /// the `#[allow(dead_code)]` keeps it in the WASM dispatch table.
+    #[allow(dead_code)]
+    fn check_auth(_env: Env, address: Address) {
         address.require_auth();
     }
 
