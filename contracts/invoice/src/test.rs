@@ -2,8 +2,8 @@
 
 use soroban_sdk::{
     contract, contractimpl, contracttype, testutils::Address as _, testutils::Events as _,
-    testutils::Ledger, testutils::MockAuth, testutils::MockAuthInvoke, Address, BytesN, Env,
-    IntoVal, Symbol, TryFromVal, vec,
+    testutils::Ledger, testutils::MockAuth, testutils::MockAuthInvoke, vec, Address, BytesN, Env,
+    IntoVal, Symbol, TryFromVal,
 };
 
 use crate::{InvoiceContract, InvoiceContractClient, InvoiceStatus};
@@ -869,7 +869,12 @@ fn test_trigger_default_stranger_panics() {
         invoke: &soroban_sdk::testutils::MockAuthInvoke {
             contract: &contract_id,
             fn_name: "mark_funded",
-            args: (invoice_id.clone(), pool_id.clone(), usdc.clone(), 980_000_000u128)
+            args: (
+                invoice_id.clone(),
+                pool_id.clone(),
+                usdc.clone(),
+                980_000_000u128,
+            )
                 .into_val(&env),
             sub_invokes: &[],
         },
@@ -1326,7 +1331,12 @@ fn test_expire_listing_stranger_panics() {
         invoke: &soroban_sdk::testutils::MockAuthInvoke {
             contract: &contract_id,
             fn_name: "mark_funded",
-            args: (invoice_id.clone(), pool_id.clone(), usdc.clone(), 980_000_000u128)
+            args: (
+                invoice_id.clone(),
+                pool_id.clone(),
+                usdc.clone(),
+                980_000_000u128,
+            )
                 .into_val(&env),
             sub_invokes: &[],
         },
